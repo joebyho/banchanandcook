@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Banchan & Cook 歌曲</title>
+  <style>
+    :root{
+      --pink-bg-1:#FFE9F0;   /* 粉綠/粉粉漸變頭 */
+      --pink-bg-2:#FFF7E6;   /* 奶杏漸變尾 */
+      --yolk:#FFC107;        /* 蛋黃主色 */
+      --yolk-soft:#FFE28A;   /* 蛋黃柔色 */
+      --cocoa:#5C3A21;       /* 可可字色 */
+      --rose:#F48FB1;        /* 少女粉標題 */
+      --card:#FFFFFF;
+      --shadow:0 8px 30px rgba(0,0,0,.08);
+    }
+
+    html,body{
+      height:100%;
+      margin:0;
+      font-family:"Noto Sans TC", system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", Arial, sans-serif;
+      color:var(--cocoa);
+      background:
+        radial-gradient(circle at 8% 12%, rgba(255,241,184,.45) 0 22px, transparent 23px) repeat,
+        radial-gradient(circle at 74% 78%, rgba(255,241,184,.35) 0 18px, transparent 19px) repeat,
+        linear-gradient(180deg, var(--pink-bg-1), var(--pink-bg-2));
+      background-size: 160px 160px, 180px 180px, 100% 100%;
+      display:flex; align-items:center; justify-content:center;
+    }
+
+    .player-container{
+      width:min(92%, 520px);
+      background:var(--card);
+      border:4px solid var(--yolk-soft);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      padding:26px 22px 22px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* 蛋形裝飾（不需上載圖片） */
+    .player-container::before{
+      content:"";
+      position:absolute;
+      top:-34px; left:-34px;
+      width:160px; height:210px;
+      background:var(--yolk-soft);
+      border-radius:50% 50% 45% 55% / 60% 60% 40% 40%; /* 蛋形 */
+      filter:blur(0.5px);
+      opacity:.35;
+      z-index:0;
+      transform:rotate(-12deg);
+    }
+
+    h1{
+      font-size:28px; line-height:1.2; margin:8px 0 14px;
+      color:var(--rose);
+      position:relative; z-index:1;
+    }
+
+    .brand-sub{
+      font-size:14px; opacity:.85; margin-bottom:18px; z-index:1; position:relative;
+    }
+
+    #start-button{
+      appearance:none; border:0; cursor:pointer;
+      padding:13px 22px; border-radius:999px;
+      font-size:16px; font-weight:700; color:#3a250f;
+      background:linear-gradient(180deg, var(--yolk), #FFB300);
+      box-shadow: 0 4px 0 #E1A300, 0 10px 18px rgba(255,193,7,.35);
+      transition:transform .08s ease, box-shadow .2s ease, filter .2s ease;
+      position:relative; z-index:1;
+    }
+    #start-button:hover{ filter:brightness(1.05); }
+    #start-button:active{ transform:translateY(1px); box-shadow:0 3px 0 #E1A300, 0 6px 12px rgba(255,193,7,.35); }
+
+    .now-playing{
+      margin-top:14px; font-size:14px; opacity:.9; min-height:1.2em; z-index:1; position:relative;
+    }
+
+    /* 簡單進度條（純CSS/JS，不佔位） */
+    .progress-wrap{
+      margin:12px auto 0; width:92%; height:8px; background:#FDEFD2;
+      border-radius:999px; overflow:hidden; z-index:1; position:relative;
+    }
+    .progress-bar{
+      width:0%; height:100%; background:var(--yolk); transition:width .2s linear;
+    }
+
+    .footnote{
+      margin-top:14px; font-size:12px; opacity:.75; z-index:1; position:relative;
+    }
+  </style>
+</head>
+<body>
+  <main class="player-container" role="region" aria-label="banchan &amp; cook 音樂播放器">
+    <h1>banchan &amp; cook 音樂時光</h1>
+    <p class="brand-sub">Banchan & Cook · 讓音樂陪您慢慢發酵</p>
+
+    <button id="start-button" aria-label="播放音樂">▶️ 播放音樂</button>
+
+    <div class="now-playing" id="nowPlaying" aria-live="polite"></div>
+    <div class="progress-wrap" aria-hidden="true">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <p class="footnote">提示：點「播放」後會自動循環播放整個歌單。</p>
+  </main>
+
+  <audio id="audio-player" preload="none" style="display:none;"></audio>
+
+  <script>
+    // ★ 把 MP3 放在與 index.html 同一層；如放在 /music，請把路徑改成 "music/xxx.mp3"
+    const playlist = [
+      "Banchan&Cook music.mp3"
+    ];
+
+    const audio = document.getElementById("audio-player");
+    const startBtn = document.getElementById("start-button");
+    const nowPlayingEl = document.getElementById("nowPlaying");
+    const progressBar = document.getElementById("progressBar");
+
+    let current = 0;
+
+    function setNowPlaying(srcPath){
+      const name = srcPath.split("/").pop();
+      nowPlayingEl.textContent = "Now Playing · " + name;
+    }
+
+    function playTrack(index){
+      if (!playlist.length) return;
+      current = (index + playlist.length) % playlist.length;
+      const src = playlist[current];
+      audio.src = src;
+      audio.play().catch(()=>{/* 有些瀏覽器需要用戶互動後才可播放 */});
+      setNowPlaying(src);
+    }
+
+    startBtn.addEventListener("click", ()=>{
+      playTrack(current);
+      startBtn.style.display = "none";
+    });
+
+    audio.addEventListener("ended", ()=>{
+      playTrack(current + 1);
+    });
+
+    // 簡單進度條
+    audio.addEventListener("timeupdate", ()=>{
+      if (!audio.duration || isNaN(audio.duration)) return;
+      const pct = (audio.currentTime / audio.duration) * 100;
+      progressBar.style.width = pct + "%";
+    });
+
+    // 若需自動開始（有些瀏覽器禁止），可解鎖後嘗試：
+    // window.addEventListener("load", ()=>{ /* audio.play() */ });
+  </script>
+</body>
+</html>
